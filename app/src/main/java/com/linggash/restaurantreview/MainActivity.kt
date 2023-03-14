@@ -2,6 +2,7 @@ package com.linggash.restaurantreview
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -33,6 +34,35 @@ class MainActivity : AppCompatActivity() {
         binding.rvReview.addItemDecoration(itemDecoration)
 
         findRestaurant()
+
+        binding.btnSend.setOnClickListener { view ->
+            postReview(binding.edReview.text.toString())
+        }
+    }
+
+    private fun postReview(review: String) {
+        showLoading(true)
+        val client = ApiConfig.getApiService().postReview(RESTAURANT_ID, "Dicoding", review)
+        client.enqueue(object : Callback<PostReviewResponse>{
+            override fun onResponse(
+                call: Call<PostReviewResponse>,
+                response: Response<PostReviewResponse>
+            ) {
+                showLoading(false)
+                val responseBody = response.body()
+                if (response.isSuccessful && responseBody != null) {
+                    setReviewData(responseBody.customerReviews)
+                } else {
+                    Log.e(TAG, "onFailure: ${response.message()}")
+                }
+            }
+
+            override fun onFailure(call: Call<PostReviewResponse>, t: Throwable) {
+                showLoading(false)
+                Log.e(TAG, "onFailure: ${t.message}")
+            }
+
+        })
     }
 
     private fun findRestaurant() {
@@ -45,10 +75,10 @@ class MainActivity : AppCompatActivity() {
             ) {
                 showLoading(false)
                 if (response.isSuccessful) {
-                    val responseBoody = response.body()
-                    if (responseBoody != null) {
-                        setRestaurantData(responseBoody.restaurant)
-                        setReviewData(responseBoody.restaurant.customerReviews)
+                    val responseBody = response.body()
+                    if (responseBody != null) {
+                        setRestaurantData(responseBody.restaurant)
+                        setReviewData(responseBody.restaurant.customerReviews)
                     }
                 }
             }
